@@ -18,7 +18,7 @@ app.listen(port, () => {
   storeService
     .initialize()
     .then(() => {
-      console.log("Server is running on port 8080");
+      console.log("Express http server listening on: " + port);
     })
     .catch((error) => {
       console.error("Error initializing the store service:", error);
