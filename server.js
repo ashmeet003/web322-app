@@ -14,9 +14,25 @@
 const express = require("express");
 const path = require("path");
 var app = express();
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const streamifier = require("streamifier");
 const storeService = require("./blog-service");
 const port = process.env.PORT || 8080;
 app.use(express.static("public"));
+
+//cloudinary
+cloudinary.config({
+  cloud_name: "dhy5y98hb",
+  api_key: "437979721979817",
+  api_secret: "h9HDNTHQnMYXFAJEJP9nJB0ymvU",
+  secure: true,
+});
+
+// Serve static files from the "public" directory
+app.use(express.static("public"));
+app.use(express.json());
+const upload = multer();
 
 // Define routes
 app.get("/", (req, res) => {
@@ -25,6 +41,9 @@ app.get("/", (req, res) => {
 
 app.get("/about", (req, res) => {
   res.sendFile(path.join(__dirname, "/views/about.html"));
+});
+app.get("/items/add", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "addItem.html"));
 });
 
 app.listen(port, () => {
@@ -43,7 +62,7 @@ app.listen(port, () => {
 app.get("/blog", (req, res) => {
   storeService
     .getPublishedPosts()
-    .then(() => {
+    .then((posts) => {
       res.json(posts);
     })
     .catch((error) => {
@@ -61,6 +80,18 @@ app.get("/posts", (req, res) => {
     .catch((error) => {
       res.status(500).send(error);
     });
+  const { category, minDate } = req.query;
+
+  if (category) {
+    const postsByCategory = storeService.getPostsByCategory(parseInt(category));
+    res.json(postsByCategory);
+  } else if (minDate) {
+    const postsByMinDate = storeService.getPostsByMinDate(minDate);
+    res.json(postsByMinDate);
+  } else {
+    const allPosts = storeService.getPosts(); //??
+    res.json(allPosts);
+  }
 });
 
 // /categories route
@@ -75,7 +106,54 @@ app.get("/categories", (req, res) => {
     });
 });
 
+app.get("/post/value", (req, res) => {
+  const id = parseInt(req.params.id);
+  const post = storeService.getPostById(id);
+
+  if (post) {
+    res.json(post);
+  } else {
+    res.status(404).json({ error: "Post not found" });
+  }
+});
+
 // No matching route
 app.get("*", (req, res) => {
   res.status(404).send("Page Not Found");
+});
+
+app.post("/posts/add", upload.single("featureImage"), (req, res) => {
+  if (req.file) {
+    let streamUpload = (req) => {
+      return new Promise((resolve, reject) => {
+        let stream = cloudinary.uploader.upload_stream((error, result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(error);
+          }
+        });
+
+        streamifier.createReadStream(req.file.buffer).pipe(stream);
+      });
+    };
+
+    async function upload(req) {
+      let result = await streamUpload(req);
+      console.log(result);
+      return result;
+    }
+
+    upload(req).then((uploaded) => {
+      processPost(uploaded.url);
+    });
+  } else {
+    processPost("");
+  }
+
+  function processPost(imageUrl) {
+    req.body.featureImage = imageUrl;
+
+    // TODO: Process the req.body and add it as a new Blog Post before redirecting to /posts
+  }
 });
