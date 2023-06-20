@@ -5,21 +5,20 @@ let categories = [];
 
 function initialize() {
   return new Promise((resolve, reject) => {
-    fs.readFile("./data/posts.json", "utf-8", (err, data) => {
+    fs.readFile("./data/posts.json", "utf8", (err, data) => {
       if (err) {
         reject("Unable to read posts file");
         return;
       }
       posts = JSON.parse(data);
-      resolve(posts);
-      fs.readFile("./data/categories.json", "utf-8", (err, data) => {
+      fs.readFile("./data/categories.json", "utf8", (err, data) => {
         if (err) {
           reject("Unable to read categories file");
           return;
         }
         categories = JSON.parse(data);
 
-        resolve(categories);
+        resolve();
       });
     });
   });
@@ -37,12 +36,12 @@ function getAllPosts() {
 
 function getPublishedPosts() {
   return new Promise((resolve, reject) => {
-    const post = items.filter((item) => item.published === true);
+    const publishedPost = posts.filter((post) => post.published === true);
 
-    if (post.length === 0) {
+    if (publishedPost.length === 0) {
       reject("No results returned");
     } else {
-      resolve(post);
+      resolve(publishedPost);
     }
   });
 }

@@ -19,7 +19,6 @@ const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier");
 const storeService = require("./blog-service");
 const port = process.env.PORT || 8080;
-app.use(express.static("public"));
 
 //cloudinary
 cloudinary.config({
@@ -42,8 +41,8 @@ app.get("/", (req, res) => {
 app.get("/about", (req, res) => {
   res.sendFile(path.join(__dirname, "/views/about.html"));
 });
-app.get("/items/add", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "addItem.html"));
+app.get("/posts/add", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "addPost.html"));
 });
 
 app.listen(port, () => {
@@ -89,7 +88,7 @@ app.get("/posts", (req, res) => {
     const postsByMinDate = storeService.getPostsByMinDate(minDate);
     res.json(postsByMinDate);
   } else {
-    const allPosts = storeService.getPosts(); //??
+    const allPosts = storeService.getAllPosts();
     res.json(allPosts);
   }
 });
@@ -107,7 +106,7 @@ app.get("/categories", (req, res) => {
 });
 
 app.get("/post/value", (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(req.params.value);
   const post = storeService.getPostById(id);
 
   if (post) {
