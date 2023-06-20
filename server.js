@@ -79,18 +79,6 @@ app.get("/posts", (req, res) => {
     .catch((error) => {
       res.status(500).send(error);
     });
-  const { category, minDate } = req.query;
-
-  if (category) {
-    const postsByCategory = storeService.getPostsByCategory(parseInt(category));
-    res.json(postsByCategory);
-  } else if (minDate) {
-    const postsByMinDate = storeService.getPostsByMinDate(minDate);
-    res.json(postsByMinDate);
-  } else {
-    const allPosts = storeService.getAllPosts();
-    res.json(allPosts);
-  }
 });
 
 // /categories route
