@@ -1,9 +1,9 @@
 /*********************************************************************************
- *  WEB322 – Assignment 02
+ *  WEB322 – Assignment 03
  *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source
  *  (including 3rd party web sites) or distributed to other students.
  *
- *  Name: _Ashmeet Kaur_ Student ID: _122421217_ Date: _June 5th, 2023_
+ *  Name: _Ashmeet Kaur_ Student ID: _122421217_ Date: _June 19th, 2023_
  *
  *  Cyclic Web App URL: https://blue-violet-chipmunk-yoke.cyclic.app
  *
@@ -79,6 +79,18 @@ app.get("/posts", (req, res) => {
     .catch((error) => {
       res.status(500).send(error);
     });
+  const { category, minDate } = req.query;
+
+  if (category) {
+    const postsByCategory = storeService.getPostsByCategory(parseInt(category));
+    res.json(postsByCategory);
+  } else if (minDate) {
+    const postsByMinDate = storeService.getPostsByMinDate(minDate);
+    res.json(postsByMinDate);
+  } else {
+    const allPosts = storeService.getAllPosts();
+    res.json(allPosts);
+  }
 });
 
 // /categories route
