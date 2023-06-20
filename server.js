@@ -105,7 +105,7 @@ app.get("/categories", (req, res) => {
     });
 });
 
-app.get("/post/value", (req, res) => {
+app.get("/post/:value", (req, res) => {
   const id = parseInt(req.params.value);
   const post = storeService.getPostById(id);
 
@@ -114,11 +114,6 @@ app.get("/post/value", (req, res) => {
   } else {
     res.status(404).json({ error: "Post not found" });
   }
-});
-
-// No matching route
-app.get("*", (req, res) => {
-  res.status(404).send("Page Not Found");
 });
 
 app.post("/posts/add", upload.single("featureImage"), (req, res) => {
@@ -136,6 +131,11 @@ app.post("/posts/add", upload.single("featureImage"), (req, res) => {
         streamifier.createReadStream(req.file.buffer).pipe(stream);
       });
     };
+
+    // No matching route
+    app.get("*", (req, res) => {
+      res.status(404).send("Page Not Found");
+    });
 
     async function upload(req) {
       let result = await streamUpload(req);
