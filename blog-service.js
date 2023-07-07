@@ -1,5 +1,6 @@
 const fs = require("fs");
-
+const { resolve } = require("path");
+const path = require("path");
 let posts = [];
 let categories = [];
 
@@ -64,9 +65,11 @@ function addPost(postData) {
       postData.published = true;
     }
 
+    // Setting the next post id
     postData.id = posts.length + 1;
-    posts.push(postData);
 
+    // Adding to posts
+    posts.push(postData);
     resolve(postData);
   });
 }
@@ -107,6 +110,20 @@ function getPostById(id) {
   });
 }
 
+function getPublishedPostsByCategory(category) {
+  return new Promise((resolve, reject) => {
+    const filteredPosts = posts.filter(
+      (post) => post.category == category && post.published === true
+    );
+
+    if (filteredPosts.length > 0) {
+      resolve(filteredPosts);
+    } else {
+      reject("no results returned");
+    }
+  });
+}
+
 module.exports = {
   initialize,
   getAllPosts,
@@ -116,4 +133,5 @@ module.exports = {
   getPostsByCategory,
   getPostsByMinDate,
   getPostById,
+  getPublishedPostsByCategory,
 };
