@@ -109,17 +109,17 @@ app.get("/posts/add", (req, res) => {
 
 //step3 get requests
 // /blog route
+
 app.get("/blog", (req, res) => {
   storeService
     .getPublishedPosts()
-    .then((posts) => {
-      res.json(posts);
+    .then((data) => {
+      res.render(data);
     })
     .catch((error) => {
-      res.status(500).send(error);
+      res.render("posts", { message: "no results" });
     });
 });
-
 // /posts route
 app.get("/posts", (req, res) => {
   const { category, minDate } = req.query;
