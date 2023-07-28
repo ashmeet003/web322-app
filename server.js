@@ -1,3 +1,16 @@
+/*********************************************************************************
+ *  WEB322 – Assignment 05
+ *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source
+ *  (including 3rd party web sites) or distributed to other students.
+ *
+ *  Name: _Ashmeet Kaur_ Student ID: _122421217_ Date: _July 26, 2023_
+ *
+ *  Cyclic Web App URL: https://blue-violet-chipmunk-yoke.cyclic.app
+ *
+ *  GitHub Repository URL: https://github.com/ashmeet003/web322-app
+ *
+ ********************************************************************************/
+
 const express = require("express");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
