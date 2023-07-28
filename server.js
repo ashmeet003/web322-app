@@ -1,16 +1,3 @@
-/*********************************************************************************
- *  WEB322 – Assignment 03
- *  I declare that this assignment is my own work in accordance with Seneca  Academic Policy.  No part *  of this assignment has been copied manually or electronically from any other source
- *  (including 3rd party web sites) or distributed to other students.
- *
- *  Name: _Ashmeet Kaur_ Student ID: _122421217_ Date: _July 24th, 2023_
- *
- *  Cyclic Web App URL: https://blue-violet-chipmunk-yoke.cyclic.app
- *
- *  GitHub Repository URL: https://github.com/ashmeet003/web322-app
- *
- ********************************************************************************/
-
 const express = require("express");
 const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
@@ -19,9 +6,10 @@ const exphbs = require("express-handlebars");
 const path = require("path");
 const stripJs = require("strip-js");
 const blogData = require("./blog-service.js");
-const app = express();
+const { resolve } = require("path");
 const upload = multer();
 const HTTP_PORT = process.env.PORT || 8080;
+const app = express();
 app.use(express.static("public"));
 app.set("view engine", ".hbs");
 const {
@@ -30,8 +18,11 @@ const {
   getCategories,
   addPost,
   getPostById,
-  getPostsByCategory,
+  getPublishedPostsByCategory,
   getPostsByMinDate,
+  addCategory,
+  deleteCategoryById,
+  deletePostById,
 } = require("./blog-service.js");
 
 app.use(function (req, res, next) {
@@ -45,6 +36,7 @@ app.use(function (req, res, next) {
   next();
 });
 
+app.use(express.urlencoded({ extended: true }));
 app.engine(
   ".hbs",
   exphbs.engine({
@@ -73,11 +65,17 @@ app.engine(
       safeHTML: function (context) {
         return stripJs(context);
       },
+      formatDate: function (dateObj) {
+        let year = dateObj.getFullYear();
+        let month = (dateObj.getMonth() + 1).toString();
+        let day = dateObj.getDate().toString();
+        return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+      },
     },
   })
 );
 
-// Configuring Cloudinary
+//cloudinary
 cloudinary.config({
   cloud_name: "dhy5y98hb",
   api_key: "437979721979817",
@@ -85,51 +83,63 @@ cloudinary.config({
   secure: true,
 });
 
-// home page
+// home: blog page
 app.get("/", (req, res) => {
   res.redirect("/blog");
 });
 
-// about
+// about page
 app.get("/about", (req, res) => {
   res.render("about");
 });
 
-// blog
+// blog page route
 app.get("/blog", async (req, res) => {
   let viewData = {};
   try {
     let posts = [];
     const { category } = req.query;
     if (category) {
+      //if categories exist, let filtered data be stored in posts
       posts = await blogData.getPublishedPostsByCategory(category);
     } else {
       posts = await blogData.getPublishedPosts();
     }
-    posts.sort((a, b) => new Date(b.postDate) - new Date(a.postDate));
+    posts.sort((a, b) => new Date(b.postDate) - new Date(a.postDate)); //sorts
     let post = posts[0];
     viewData.posts = posts;
     viewData.post = post;
   } catch (err) {
+    //for any error
     viewData.message = "no results";
   }
   try {
-    let categories = await blogData.getCategories(); //get all categories
+    let categories = await blogData.getCategories();
     viewData.categories = categories;
   } catch (err) {
     viewData.categoriesMessage = "no results";
   }
-
-  res.render("blog", { data: viewData });
+  if (viewData.posts.length > 0) {
+    //to render data correctly
+    res.render("blog", { data: viewData });
+  } else {
+    res.render("blog", {
+      data: viewData,
+      message: "Please try another post / category",
+    });
+  }
 });
 
-//posts
+// posts route
 app.get("/posts", (req, res) => {
   const { category, minDate } = req.query;
+  console.log(category);
   if (category) {
-    getPostsByCategory(category)
+    getPublishedPostsByCategory(category)
       .then((data) => {
-        res.render("posts", { posts: data });
+        data.length > 0
+          ? res.render("posts", { posts: data })
+          : res.render("posts", { message: "No Results" });
       })
       .catch((err) => {
         res.render("posts", { message: "no results" });
@@ -137,7 +147,9 @@ app.get("/posts", (req, res) => {
   } else if (minDate) {
     getPostsByMinDate(minDate)
       .then((data) => {
-        res.render("posts", { posts: data });
+        data.length > 0
+          ? res.render("posts", { posts: data })
+          : res.render("posts", { message: "No Results" });
       })
       .catch((err) => {
         res.render("posts", { message: "no results" });
@@ -145,23 +157,29 @@ app.get("/posts", (req, res) => {
   } else {
     getAllPosts()
       .then((data) => {
-        res.render("posts", { posts: data });
+        data.length > 0
+          ? res.render("posts", { posts: data })
+          : res.render("posts", { message: "No Results" });
       })
-      // Error Handling
       .catch((err) => {
         res.render("posts", { message: "no results" });
       });
   }
 });
 
-// add post(get)
+// add post route
 app.get("/posts/add", (req, res) => {
-  res.render("addPost");
+  getCategories()
+    .then((categories) => {
+      res.render("addPost", { categories: categories });
+    })
+    .catch(() => {
+      res.render("addPost", { categories: [] });
+    });
 });
 
-// add post(post)
+// add post route: POST
 app.post("/posts/add", upload.single("featureImage"), (req, res) => {
-  // Configuring cloudinary image uploading
   let streamUpload = (req) => {
     return new Promise((resolve, reject) => {
       let stream = cloudinary.uploader.upload_stream((error, result) => {
@@ -171,11 +189,9 @@ app.post("/posts/add", upload.single("featureImage"), (req, res) => {
           reject(error);
         }
       });
-
       streamifier.createReadStream(req.file.buffer).pipe(stream);
     });
   };
-
   async function upload(req) {
     let result = await streamUpload(req);
     return result;
@@ -193,47 +209,93 @@ app.post("/posts/add", upload.single("featureImage"), (req, res) => {
       postObject.category = req.body.category;
       postObject.featureImage = req.body.featureImage;
       postObject.published = req.body.published;
+
       if (postObject.title) {
-        addPost(postObject);
+        addPost(postObject).then(() => {
+          res.redirect("/posts");
+        });
       }
-      res.redirect("/posts");
     })
-    // Error Handling
     .catch((err) => {
       res.send(err);
     });
 });
 
-// post by id
+// post id route: using values
 app.get("/post/:value", (req, res) => {
   getPostById(req.params.value)
     .then((data) => {
       res.send(data);
     })
+    // Error
     .catch((err) => {
       res.send(err);
     });
 });
 
-// categories
+//categories
 app.get("/categories", (req, res) => {
   getCategories()
     .then((data) => {
-      res.render("categories", { categories: data });
+      data.length > 0
+        ? res.render("categories", { categories: data })
+        : res.render("categories", { message: "No Results" });
     })
-    .catch((err) => {
+    .catch(() => {
       res.render("categories", { message: "no results" });
     });
 });
 
-// blog by id
+app.get("/categories/add", (req, res) => {
+  //addCategory
+  res.render("addCategory");
+});
+
+// add categories post route
+app.post("/categories/add", (req, res) => {
+  let catObject = {};
+  catObject.category = req.body.category;
+  console.log(req.body.category);
+  if (req.body.category != "") {
+    addCategory(catObject)
+      .then(() => {
+        res.redirect("/categories");
+      })
+      .catch(() => {
+        console.log("Some error occured");
+      });
+  }
+});
+
+// removing id
+app.get("/categories/delete/:id", (req, res) => {
+  deleteCategoryById(req.params.id)
+    .then(() => {
+      res.redirect("/categories");
+    })
+    .catch(() => {
+      console.log("Unable to remove category / Category not found");
+    });
+});
+
+// delete id
+app.get("/posts/delete/:id", (req, res) => {
+  deletePostById(req.params.id)
+    .then(() => {
+      res.redirect("/posts");
+    })
+    .catch(() => {
+      console.log("Unable to remove category / Category not found");
+    });
+});
+
+// blog id
 app.get("/blog/:id", async (req, res) => {
   let viewData = {};
   try {
     let posts = [];
-    const { category } = req.query;
-    if (category) {
-      posts = await blogData.getPublishedPostsByCategory(category);
+    if (req.query.category) {
+      posts = await blogData.getPublishedPostsByCategory(req.query.category);
     } else {
       posts = await blogData.getPublishedPosts();
     }
@@ -253,13 +315,13 @@ app.get("/blog/:id", async (req, res) => {
   } catch (err) {
     viewData.categoriesMessage = "no results";
   }
+  // rendering blog view
   res.render("blog", { data: viewData });
 });
 
 app.use((req, res) => {
   res.status(404).render("404");
 });
-
 initialize().then(() => {
   app.listen(HTTP_PORT, () => {
     console.log("Express http server listening on: " + HTTP_PORT);
