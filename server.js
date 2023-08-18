@@ -25,7 +25,6 @@ const { redirect } = require("express/lib/response.js");
 const app = express();
 const upload = multer();
 const HTTP_PORT = process.env.PORT || 8080;
-
 const {
   initialize,
   getAllPosts,
