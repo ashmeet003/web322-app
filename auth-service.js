@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const Schema = mongoose.Schema;
-
-// Creating a schema for our database
 const userSchema = new Schema({
   userName: {
     type: String,
@@ -17,16 +15,16 @@ const userSchema = new Schema({
     },
   ],
 });
-
-// Using the schema to create a user object
 let User;
 function initialize() {
   return new Promise((resolve, reject) => {
     let db = mongoose.createConnection(
-      "mongodb+srv://ashmeet003:<aishK_2003>@cluster0.pzltytf.mongodb.net/?retryWrites=true&w=majority",
+      "mongodb+srv://ocean003:" +
+        "aishK_2003" +
+        "@cluster0.zniq9s6.mongodb.net/?retryWrites=true&w=majority",
       { useNewUrlParser: true, useUnifiedTopology: true }
     );
-
+    //creates a connection, works on authorization, if not, rejects with error
     db.on("error", (err) => {
       reject(err);
     });
@@ -43,19 +41,18 @@ function registerUser(userData) {
     if (userData.password !== userData.password2) {
       reject("Passwords do not match");
     } else {
-      // Hashing the password before storing it
-      bcrypt
+      bcrypt //hashes password
         .hash(userData.password, 10)
         .then((hash) => {
           userData.password = hash;
-          // Saving the user data
           let newUser = new User(userData);
-          newUser
+          newUser //saves new user
             .save()
             .then(() => {
               resolve();
             })
             .catch((err) => {
+              //catches for any error
               if (err.code === 11000) {
                 reject("User Name already taken");
               } else {
@@ -65,7 +62,7 @@ function registerUser(userData) {
         })
         .catch((err) => {
           console.log(err);
-          reject("There was an error encrypting the password");
+          reject("Error in password encryption");
         });
     }
   });
@@ -77,14 +74,13 @@ function checkUser(userData) {
     User.find({ userName: userData.userName })
       .exec()
       .then((users) => {
-        //checks for user
         if (users.length === 0) {
           reject(`Unable to find user: ${userData.userName}`);
         } else {
+          //if user exists
           bcrypt
-            .compare(userData.password, users[0].password)
+            .compare(userData.password, users[0].password) //compares passwords
             .then((result) => {
-              //checks for password
               if (result === true) {
                 resolve(users[0]);
               } else {
@@ -115,8 +111,6 @@ function checkUser(userData) {
       });
   });
 }
-
-// Exporting the functions
 module.exports = {
   initialize,
   registerUser,

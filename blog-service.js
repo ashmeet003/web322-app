@@ -39,8 +39,8 @@ function initialize() {
   });
 }
 
-// all posts resolved
 function getAllPosts() {
+  // all posts resolved
   return new Promise((resolve, reject) => {
     Post.findAll()
       .then((data) => {
@@ -88,7 +88,7 @@ function getPublishedPosts() {
   });
 }
 
-// => Provides an array of "post" objects whose published property is true and finds posts by category
+// find posts with published property true and according to category
 function getPublishedPostsByCategory(category) {
   return new Promise((resolve, reject) => {
     Post.findAll({
@@ -119,6 +119,24 @@ function getCategories() {
   });
 }
 
+// categories by posts
+function getPostsByCategory(category) {
+  return new Promise((resolve, reject) => {
+    Post.findAll({
+      where: {
+        category: category,
+      },
+    })
+      .then((data) => {
+        console.log(category);
+        resolve(data);
+      })
+      .catch(() => {
+        reject("No results returned");
+      });
+  });
+}
+
 // finds posts by id
 function getPostById(id) {
   return new Promise((resolve, reject) => {
@@ -136,20 +154,37 @@ function getPostById(id) {
   });
 }
 
-// categories by posts
-function getPostsByCategory(category) {
+// new category
+function addCategory(categoryData) {
   return new Promise((resolve, reject) => {
-    Post.findAll({
-      where: {
-        category: category,
-      },
-    })
-      .then((data) => {
-        console.log(category);
-        resolve(data);
+    for (let i in categoryData) {
+      if (categoryData[i] === "") {
+        categoryData[i] = null;
+      }
+    }
+    Category.create(categoryData)
+      .then((category) => {
+        resolve(category);
       })
       .catch(() => {
-        reject("No results returned");
+        reject("unable to create category");
+      });
+  });
+}
+
+// category by id
+function deleteCategoryById(id) {
+  return new Promise((resolve, reject) => {
+    Category.destroy({
+      where: {
+        id: id,
+      },
+    })
+      .then(() => {
+        resolve("Destroyed");
+      })
+      .catch(() => {
+        reject("Unable to delete category");
       });
   });
 }
@@ -188,41 +223,6 @@ function addPost(postData) {
       })
       .catch((err) => {
         reject("Unable to create post");
-      });
-  });
-}
-
-// new category
-function addCategory(categoryData) {
-  return new Promise((resolve, reject) => {
-    for (let i in categoryData) {
-      if (categoryData[i] === "") {
-        categoryData[i] = null;
-      }
-    }
-    Category.create(categoryData)
-      .then((category) => {
-        resolve(category);
-      })
-      .catch(() => {
-        reject("unable to create category");
-      });
-  });
-}
-
-// category by id
-function deleteCategoryById(id) {
-  return new Promise((resolve, reject) => {
-    Category.destroy({
-      where: {
-        id: id,
-      },
-    })
-      .then(() => {
-        resolve("Destroyed");
-      })
-      .catch(() => {
-        reject("Unable to delete category");
       });
   });
 }
